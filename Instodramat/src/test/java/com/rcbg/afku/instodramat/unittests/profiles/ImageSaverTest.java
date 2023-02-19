@@ -15,11 +15,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(MockitoExtension.class)
 public class ImageSaverTest {
 
@@ -33,7 +35,10 @@ public class ImageSaverTest {
         String pathToImages = "src/test/resources/unittest_images/";
         String[][] imageList = {
                 {"ok", "ok.PNG"},
-                {"largeSize", "largeSize.PNG"}
+                {"largeSize", "largeSize.PNG"},
+                {"wrongExtension", "wrongExtension.txt"},
+                {"badRatio", "badRatio.PNG"},
+                {"largeDimensions", "largeDimensions.PNG"}
         };
         for(String[] element: imageList){
             Path path = Paths.get(pathToImages + element[1]);
@@ -61,10 +66,51 @@ public class ImageSaverTest {
     }
 
     @Test
-    public void testImageSaverValidateToLargeSize(){
+    public void testImageSaverValidateTooLargeSize(){
         MockMultipartFile file = multipartFileMap.get("largeSize");
-        Assertions.assertThrows(ImageUploadException.class, () -> imageSaver.validateMultipartImage(file), "File is too large. Max file size is: 10 MB");
+        ImageUploadException ex = Assertions.assertThrows(ImageUploadException.class, () -> imageSaver.validateMultipartImage(file));
+        assertEquals(ex.getMessage(), "File is too large. Max file size is: 10 MB");
     }
 
-    // Add more tests
+    @Test
+    public void testImageSaverValidateWrongExtension(){
+        MockMultipartFile file = multipartFileMap.get("wrongExtension");
+        ImageUploadException ex = Assertions.assertThrows(ImageUploadException.class, () -> imageSaver.validateMultipartImage(file));
+        assertEquals(ex.getMessage(), "Invalid image extension: txt . Allowed only: [PNG, JPG, JPEG]");
+    }
+
+    @Test
+    public void testImageSaverValidateBadRatio(){
+        MockMultipartFile file = multipartFileMap.get("badRatio");
+        ImageUploadException ex = Assertions.assertThrows(ImageUploadException.class, () -> imageSaver.validateMultipartImage(file));
+        assertEquals(ex.getMessage(), "Cannot save image with ratio: 0.9717391 because expected is: 1");
+    }
+
+    @Test
+    public void testImageSaverValidateTooLargeDimensions(){
+        MockMultipartFile file = multipartFileMap.get("largeDimensions");
+        ImageUploadException ex = Assertions.assertThrows(ImageUploadException.class, () -> imageSaver.validateMultipartImage(file));
+        assertEquals(ex.getMessage(), "Cannot save image with pixel size: 2235 because max is: 2048");
+    }
+
+    @Test
+    public void testImageSaverSaveOkImage() throws IOException {
+        MockMultipartFile file = multipartFileMap.get("ok");
+        String name = "test_name.JPEG";
+
+        String savedName = imageSaver.saveMultipartFile(file, name);
+        assertEquals(savedName, "storage\\" + name);
+        Files.delete(Paths.get(savedName));
+    }
+
+    @Test
+    public void testImageSaverGenerateName(){
+        String userId = "af6789a4-5515-45c9-9329-3c748f2799cb";
+        LocalDate date = LocalDate.of(1998, 5, 2);
+        int photoId = 23;
+
+        String generatedName = imageSaver.generateBase64Name(userId, date, photoId);
+        String expectedName = "YWY2Nzg5YTQtNTUxNS00NWM5LTkzMjktM2M3NDhmMjc5OWNiMTk5OC0wNS0wMjIz";
+        Assertions.assertEquals(generatedName, expectedName);
+    }
 }

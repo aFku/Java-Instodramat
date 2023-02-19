@@ -95,8 +95,8 @@ public class ImageSaver {
         }
 
         if( height > maxDimensions ){
-            logger.error("Failed on validating file's dimensions. Too large pixel size: " + height);
-            throw new ImageUploadException("Cannot save image with pixel size: " + height + " because max is: " + maxDimensions);
+            logger.error("Failed on validating file's dimensions. Too large pixel size: " + (int) height);
+            throw new ImageUploadException("Cannot save image with pixel size: " + (int) height + " because max is: " + maxDimensions);
         }
     }
 
