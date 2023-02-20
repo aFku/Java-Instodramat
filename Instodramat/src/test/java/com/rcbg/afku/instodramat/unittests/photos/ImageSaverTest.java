@@ -1,4 +1,4 @@
-package com.rcbg.afku.instodramat.unittests.profiles;
+package com.rcbg.afku.instodramat.unittests.photos;
 
 import com.rcbg.afku.instodramat.photos.exceptions.ImageUploadException;
 import com.rcbg.afku.instodramat.photos.services.ImageSaver;
@@ -59,7 +59,7 @@ public class ImageSaverTest {
     }
 
     @Test
-    public void testImageSaverValidateOkFile(){
+    public void testImageSaverValidateOkFile() throws ImageUploadException{
         MockMultipartFile file = multipartFileMap.get("ok");
         imageSaver.validateMultipartImage(file);
         // Should nothing happen
@@ -94,7 +94,7 @@ public class ImageSaverTest {
     }
 
     @Test
-    public void testImageSaverSaveOkImage() throws IOException {
+    public void testImageSaverSaveOkImage() throws IOException, ImageUploadException {
         MockMultipartFile file = multipartFileMap.get("ok");
         String name = "test_name.JPEG";
 
