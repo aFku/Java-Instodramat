@@ -3,7 +3,7 @@ package com.rcbg.afku.instodramat.photos.controllers;
 import com.rcbg.afku.instodramat.common.responses.MetaData;
 import com.rcbg.afku.instodramat.photos.domain.Photo;
 import com.rcbg.afku.instodramat.photos.domain.PhotoRepository;
-import com.rcbg.afku.instodramat.photos.dtos.PhotoDto;
+import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
 import com.rcbg.afku.instodramat.photos.exceptions.ImageUploadException;
 import com.rcbg.afku.instodramat.photos.exceptions.SavePhotoException;
@@ -35,7 +35,7 @@ public class PhotoPostsController {
     }
 
     @PostMapping(consumes = MediaType.ALL_VALUE) // Temporary All for developing
-    public ResponseEntity<SinglePhotoResponse> addPostWithPhoto(HttpServletRequest request, @ModelAttribute PhotoDto requestDto, Authentication authentication){
+    public ResponseEntity<SinglePhotoResponse> addPostWithPhoto(HttpServletRequest request, @ModelAttribute PhotoRequestDto requestDto, Authentication authentication){
         String userId = authentication.getName();
         LocalDate date = LocalDate.now();
         Photo newPhoto = new Photo();
