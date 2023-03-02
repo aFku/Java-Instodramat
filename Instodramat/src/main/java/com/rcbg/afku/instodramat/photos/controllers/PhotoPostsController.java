@@ -38,22 +38,23 @@ public class PhotoPostsController {
     public ResponseEntity<SinglePhotoResponse> addPostWithPhoto(HttpServletRequest request, @ModelAttribute PhotoRequestDto requestDto, Authentication authentication){
         String userId = authentication.getName();
         LocalDate date = LocalDate.now();
-        Photo newPhoto = new Photo();
+        String pathToSavedPhoto = null;
 
-        // Create and Delete should be hidden in service layer, but it should look like this
-        repository.save(newPhoto);
-
+        // Fill new photo
         try {
-            imageSaver.saveMultipartFile(requestDto.getMultipartFile(), imageSaver.generateBase64Name(userId, date, newPhoto.getPhotoId()));
+            pathToSavedPhoto = imageSaver.saveMultipartFile(requestDto.getImage(), imageSaver.generateBase64Name(userId, date));
         } catch (ImageUploadException ex) {
-            repository.delete(newPhoto);
             throw new SavePhotoException(ex.getMessage());
         }
+
+
+//        newPhoto.setPathToFile(pathToSavedPhoto);
+//        repository.save(newPhoto);
 
         HttpHeaders headers = new HttpHeaders();
         MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.CREATED.value(), "object");
         SinglePhotoResponse response = new SinglePhotoResponse();
-        response.setData(new PhotoResponseDto(newPhoto.getPhotoId()));
+//        response.setData(PhotoMapper.INSTANCE.requestDtoToEntity());
         response.setMetaData(metaData);
         return new ResponseEntity<>(response, headers, HttpStatus.CREATED);
     }

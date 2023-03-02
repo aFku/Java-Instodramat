@@ -26,7 +26,15 @@ public class Photo {
     @ManyToOne
     Profile author;
 
-    @OneToMany(mappedBy = "likes")
+    @ManyToMany
     Set<Profile> likes;
+
+    public void addLike(Profile profile){
+        likes.add(profile);
+    }
+
+    public void removeLike(Profile profile){
+        likes.remove(profile);
+    }
 
 }

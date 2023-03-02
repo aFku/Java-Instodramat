@@ -56,6 +56,7 @@ public class ImageSaverTest {
         imageSaver.setMaxDimensions(2048);
         imageSaver.setStorageLocalization("storage/");
         imageSaver.setMaxSizeMessageInMb(10);
+        imageSaver.setRandomSeed(941);
     }
 
     @Test
@@ -96,10 +97,10 @@ public class ImageSaverTest {
     @Test
     public void testImageSaverSaveOkImage() throws IOException, ImageUploadException {
         MockMultipartFile file = multipartFileMap.get("ok");
-        String name = "test_name.JPEG";
+        String name = "test_name";
 
         String savedName = imageSaver.saveMultipartFile(file, name);
-        assertEquals(savedName, "storage\\" + name);
+        assertEquals(savedName, "storage\\" + name + ".png");
         Files.delete(Paths.get(savedName));
     }
 
@@ -107,10 +108,9 @@ public class ImageSaverTest {
     public void testImageSaverGenerateName(){
         String userId = "af6789a4-5515-45c9-9329-3c748f2799cb";
         LocalDate date = LocalDate.of(1998, 5, 2);
-        int photoId = 23;
 
-        String generatedName = imageSaver.generateBase64Name(userId, date, photoId);
-        String expectedName = "YWY2Nzg5YTQtNTUxNS00NWM5LTkzMjktM2M3NDhmMjc5OWNiMTk5OC0wNS0wMjIz";
+        String generatedName = imageSaver.generateBase64Name(userId, date);
+        String expectedName = "YWY2Nzg5YTQtNTUxNS00NWM5LTkzMjktM2M3NDhmMjc5OWNiXzE5OTgtMDUtMDJfODM0ODhkMzgtYWEwMS0zYzljLWFmZDItMDJiOGZkZmVjMDA0";
         Assertions.assertEquals(generatedName, expectedName);
     }
 }

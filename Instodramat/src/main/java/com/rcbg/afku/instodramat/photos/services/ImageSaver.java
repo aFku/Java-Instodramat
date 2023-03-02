@@ -13,6 +13,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,6 +22,8 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class ImageSaver {
@@ -44,9 +48,15 @@ public class ImageSaver {
     @Value("${photos.dimensions.expected-ratio-to-one}")
     int expectedRatio;
 
+    @Value("${photos.random.name-generator-seed}")
+    long randomSeed;
 
-    public String generateBase64Name(String userId, LocalDate date, int photoId){
-        String stringToEncode = userId + date.toString() + photoId;
+
+    public String generateBase64Name(String userId, LocalDate date){
+        Random random = new Random(randomSeed);
+        byte[] salt = new byte[4];
+        random.nextBytes(salt);
+        String stringToEncode = userId + "_" + date.toString() + "_" + UUID.nameUUIDFromBytes(salt);
         return Base64.getEncoder().encodeToString(stringToEncode.getBytes());
     }
 
@@ -60,7 +70,7 @@ public class ImageSaver {
     }
 
     private void validateExtension(MultipartFile image) throws ImageUploadException {
-        String imageExtension = image.getContentType().split("/")[1];
+        String imageExtension = image.getContentType();
         if(imageExtension == null || ! extensions.contains(imageExtension.toUpperCase())) {
             throw new ImageUploadException("Invalid image extension: " + imageExtension + " . Allowed only: " + extensions);
         }
@@ -170,5 +180,13 @@ public class ImageSaver {
 
     public void setExpectedRatio(int expectedRatio) {
         this.expectedRatio = expectedRatio;
+    }
+
+    public long getRandomSeed() {
+        return randomSeed;
+    }
+
+    public void setRandomSeed(long randomSeed) {
+        this.randomSeed = randomSeed;
     }
 }

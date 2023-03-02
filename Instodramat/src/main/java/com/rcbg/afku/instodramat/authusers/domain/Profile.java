@@ -1,6 +1,7 @@
 package com.rcbg.afku.instodramat.authusers.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.rcbg.afku.instodramat.photos.domain.Photo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,6 +36,9 @@ public class Profile {
     )
     @JsonIgnoreProperties
     Set<Profile> followers;
+
+    @ManyToMany(mappedBy = "likes")
+    Set<Photo> likes;
 
     public void addToFollowers(Profile profile){
         followers.add(profile);
