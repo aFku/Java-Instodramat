@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -107,10 +108,10 @@ public class ImageSaverTest {
     @Test
     public void testImageSaverGenerateName(){
         String userId = "af6789a4-5515-45c9-9329-3c748f2799cb";
-        LocalDate date = LocalDate.of(1998, 5, 2);
+        LocalDateTime date = LocalDateTime.of(1998, 5, 2, 1, 5);
 
         String generatedName = imageSaver.generateBase64Name(userId, date);
-        String expectedName = "YWY2Nzg5YTQtNTUxNS00NWM5LTkzMjktM2M3NDhmMjc5OWNiXzE5OTgtMDUtMDJfODM0ODhkMzgtYWEwMS0zYzljLWFmZDItMDJiOGZkZmVjMDA0";
+        String expectedName = "YWY2Nzg5YTQtNTUxNS00NWM5LTkzMjktM2M3NDhmMjc5OWNiXzE5OTgtMDUtMDJUMDE6MDVfODM0ODhkMzgtYWEwMS0zYzljLWFmZDItMDJiOGZkZmVjMDA0";
         Assertions.assertEquals(generatedName, expectedName);
     }
 }

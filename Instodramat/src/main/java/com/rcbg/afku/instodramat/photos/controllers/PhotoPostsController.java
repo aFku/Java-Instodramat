@@ -1,14 +1,11 @@
 package com.rcbg.afku.instodramat.photos.controllers;
 
 import com.rcbg.afku.instodramat.common.responses.MetaData;
-import com.rcbg.afku.instodramat.photos.domain.Photo;
 import com.rcbg.afku.instodramat.photos.domain.PhotoRepository;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
-import com.rcbg.afku.instodramat.photos.exceptions.ImageUploadException;
-import com.rcbg.afku.instodramat.photos.exceptions.SavePhotoException;
 import com.rcbg.afku.instodramat.photos.responses.SinglePhotoResponse;
-import com.rcbg.afku.instodramat.photos.services.ImageSaver;
+import com.rcbg.afku.instodramat.photos.services.PhotoManager;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -18,44 +15,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-
 @RestController
 @RequestMapping("api/v1/photos")
 public class PhotoPostsController {
 
-    private final ImageSaver imageSaver;
-
     private final PhotoRepository repository;
+    private final PhotoManager photoManager;
 
     @Autowired
-    public PhotoPostsController(ImageSaver imageSaver, PhotoRepository repository) {
-        this.imageSaver = imageSaver;
+    public PhotoPostsController(PhotoRepository repository, PhotoManager photoManager) {
         this.repository = repository;
+        this.photoManager = photoManager;
     }
 
     @PostMapping(consumes = MediaType.ALL_VALUE) // Temporary All for developing
     public ResponseEntity<SinglePhotoResponse> addPostWithPhoto(HttpServletRequest request, @ModelAttribute PhotoRequestDto requestDto, Authentication authentication){
         String userId = authentication.getName();
-        LocalDate date = LocalDate.now();
-        String pathToSavedPhoto = null;
-
-        // Fill new photo
-        try {
-            pathToSavedPhoto = imageSaver.saveMultipartFile(requestDto.getImage(), imageSaver.generateBase64Name(userId, date));
-        } catch (ImageUploadException ex) {
-            throw new SavePhotoException(ex.getMessage());
-        }
-
-
-//        newPhoto.setPathToFile(pathToSavedPhoto);
-//        repository.save(newPhoto);
+        PhotoResponseDto responseDto = photoManager.createPhotoPost(requestDto, userId);
 
         HttpHeaders headers = new HttpHeaders();
         MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.CREATED.value(), "object");
         SinglePhotoResponse response = new SinglePhotoResponse();
-//        response.setData(PhotoMapper.INSTANCE.requestDtoToEntity());
         response.setMetaData(metaData);
+        response.setData(responseDto);
         return new ResponseEntity<>(response, headers, HttpStatus.CREATED);
     }
 

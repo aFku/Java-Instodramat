@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Random;
@@ -52,7 +53,7 @@ public class ImageSaver {
     long randomSeed;
 
 
-    public String generateBase64Name(String userId, LocalDate date){
+    public String generateBase64Name(String userId, LocalDateTime date){
         Random random = new Random(randomSeed);
         byte[] salt = new byte[4];
         random.nextBytes(salt);
