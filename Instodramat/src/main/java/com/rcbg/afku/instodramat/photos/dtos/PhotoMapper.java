@@ -2,6 +2,7 @@ package com.rcbg.afku.instodramat.photos.dtos;
 
 import com.rcbg.afku.instodramat.authusers.domain.Profile;
 import com.rcbg.afku.instodramat.photos.domain.Photo;
+import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
@@ -15,8 +16,14 @@ public interface PhotoMapper {
     PhotoMapper INSTANCE = Mappers.getMapper(PhotoMapper.class);
 
     @Mapping(target = "photoId", ignore = true)
+    @Mapping(source = "publishDate", target = "publishDate")
+    @Mapping(source = "pathToFile", target = "pathToFile")
+    @Mapping(source = "author", target = "author")
     public Photo requestDtoToEntity(PhotoRequestDto requestDto, LocalDateTime publishDate, String pathToFile, Profile author);
 
+    @InheritInverseConfiguration
+    @Mapping(source = "author.profileId", target = "authorId")
+    @Mapping(source = "pathToFile", target = "image")
     public PhotoResponseDto EntityToResponseDto(Photo photo);
 
     @Mapping(target = "photoId", ignore = true)
