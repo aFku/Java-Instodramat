@@ -146,8 +146,9 @@ public class DTOsValidationTest {
         PhotoRequestDto dto = new PhotoRequestDto();
         dto.setFile(null);
         dto.setDescription("NewDescription");
-        Photo updatedPhoto = PhotoMapper.INSTANCE.updateEntityWithRequestDto(dto);
+        Photo updatedPhoto = PhotoMapper.INSTANCE.updateEntityWithRequestDto(dto, photo);
 
         Assertions.assertEquals(dto.getDescription(), updatedPhoto.getDescription());
+        Assertions.assertEquals(photo.getPathToFile(), updatedPhoto.getPathToFile());
     }
 }

@@ -6,6 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -35,6 +39,14 @@ public class Photo {
 
     public void removeLike(Profile profile){
         likes.remove(profile);
+    }
+
+    @PostRemove
+    public void deleteRelatedFile() throws IOException {
+        Path path = Paths.get(this.pathToFile);
+        if(Files.exists(path)){
+            Files.delete(path);
+        }
     }
 
 }

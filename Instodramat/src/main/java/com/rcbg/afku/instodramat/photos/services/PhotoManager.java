@@ -1,13 +1,16 @@
 package com.rcbg.afku.instodramat.photos.services;
 
+import com.rcbg.afku.instodramat.authusers.domain.Profile;
 import com.rcbg.afku.instodramat.authusers.services.ProfileManager;
 import com.rcbg.afku.instodramat.common.validators.groups.OnCreate;
+import com.rcbg.afku.instodramat.common.validators.groups.OnUpdate;
 import com.rcbg.afku.instodramat.photos.domain.Photo;
 import com.rcbg.afku.instodramat.photos.domain.PhotoRepository;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoMapper;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
 import com.rcbg.afku.instodramat.photos.exceptions.ImageUploadException;
+import com.rcbg.afku.instodramat.photos.exceptions.PhotoNotFoundException;
 import com.rcbg.afku.instodramat.photos.exceptions.SavePhotoException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -20,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 @Validated
@@ -36,6 +40,16 @@ public class PhotoManager {
         this.repository = repository;
         this.profileManager = profileManager;
         this.imageSaver = imageSaver;
+    }
+
+    public Photo getDomainObjectByPhotoId(int photoId){
+        return repository.findById(photoId).orElseThrow(() -> new PhotoNotFoundException("Cannot find photo with ID: " + photoId));
+    }
+
+    public boolean checkOwnership(int photoId, int profileId){
+        Photo photo = this.getDomainObjectByPhotoId(photoId);
+        Profile profile = profileManager.getDomainObjectByProfileId(profileId);
+        return Objects.equals(photo.getAuthor().getProfileId(), profile.getProfileId());
     }
 
 
@@ -55,8 +69,13 @@ public class PhotoManager {
     }
 
     @Transactional
-    public PhotoResponseDto updatePhoto(){
-        return null;
+    @Validated(OnUpdate.class)
+    public PhotoResponseDto updatePhoto(@Valid PhotoRequestDto requestDto, int photoId){
+        Photo photo = getDomainObjectByPhotoId(photoId);
+        photo = PhotoMapper.INSTANCE.updateEntityWithRequestDto(requestDto, photo);
+        repository.save(photo);
+        logger.info("Photo with ID: " + photoId + " has been updated");
+        return PhotoMapper.INSTANCE.EntityToResponseDto(photo);
     }
 
     @Transactional

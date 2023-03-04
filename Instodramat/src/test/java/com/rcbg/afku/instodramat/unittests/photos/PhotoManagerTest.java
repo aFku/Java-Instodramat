@@ -2,6 +2,7 @@ package com.rcbg.afku.instodramat.unittests.photos;
 
 import com.rcbg.afku.instodramat.authusers.domain.Profile;
 import com.rcbg.afku.instodramat.authusers.services.ProfileManager;
+import com.rcbg.afku.instodramat.photos.domain.Photo;
 import com.rcbg.afku.instodramat.photos.domain.PhotoRepository;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +26,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 public class PhotoManagerTest {
@@ -77,5 +81,30 @@ public class PhotoManagerTest {
         Assertions.assertEquals("path/to/photo.jpg", responseDto.getImage());
         Assertions.assertEquals("Description", responseDto.getDescription());
         Assertions.assertEquals(64, responseDto.getAuthorId());
+    }
+
+    @Test
+    public void postUpdateSuccessTest(){
+        Profile profile = new Profile();
+        profile.setProfileId(32);
+
+        Photo photo = new Photo();
+        photo.setPhotoId(5);
+        photo.setPathToFile("path/to/file.png");
+        photo.setAuthor(profile);
+        photo.setPublishDate(LocalDateTime.now());
+        photo.setDescription("Description");
+
+        PhotoRequestDto requestDto = new PhotoRequestDto();
+        requestDto.setFile(null);
+        requestDto.setDescription("updateDescription123");
+
+        Mockito.when(repository.findById(photo.getPhotoId())).thenReturn(Optional.of(photo));
+        PhotoResponseDto updatedPhoto = photoManager.updatePhoto(requestDto, photo.getPhotoId());
+
+        Assertions.assertEquals(updatedPhoto.getPhotoId(), photo.getPhotoId());
+        Assertions.assertEquals(photo.getPathToFile(), updatedPhoto.getImage());
+        Assertions.assertEquals(requestDto.getDescription(), updatedPhoto.getDescription());
+        Assertions.assertEquals(photo.getAuthor().getProfileId(), profile.getProfileId());
     }
 }
