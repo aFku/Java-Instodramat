@@ -7,7 +7,6 @@ import com.rcbg.afku.instodramat.photos.domain.Photo;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoMapper;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
-import com.rcbg.afku.instodramat.photos.services.ImageSaver;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -48,7 +46,7 @@ public class DTOsValidationTest {
     public void photoRequestDtoOnCreateTest(){
         PhotoRequestDto dto = new PhotoRequestDto();
         dto.setDescription("Description");
-        dto.setImage(image);
+        dto.setFile(image);
 
         Set<ConstraintViolation<PhotoRequestDto>> violations = validator.validate(dto, OnCreate.class);
         Assertions.assertTrue(violations.isEmpty());
@@ -56,7 +54,7 @@ public class DTOsValidationTest {
 
         dto = new PhotoRequestDto();
         dto.setDescription("Description");
-        dto.setImage(null);
+        dto.setFile(null);
 
         violations = validator.validate(dto, OnCreate.class);
         Assertions.assertEquals(1, violations.size());
@@ -67,7 +65,7 @@ public class DTOsValidationTest {
     public void photoRequestDtoOnUpdateTest(){
         PhotoRequestDto dto = new PhotoRequestDto();
         dto.setDescription("Description");
-        dto.setImage(null);
+        dto.setFile(null);
 
         Set<ConstraintViolation<PhotoRequestDto>> violations = validator.validate(dto, OnUpdate.class);
         Assertions.assertTrue(violations.isEmpty());
@@ -75,7 +73,7 @@ public class DTOsValidationTest {
 
         dto = new PhotoRequestDto();
         dto.setDescription("Description");
-        dto.setImage(image);
+        dto.setFile(image);
 
         violations = validator.validate(dto, OnUpdate.class);
         Assertions.assertEquals(1, violations.size());
@@ -86,7 +84,7 @@ public class DTOsValidationTest {
     public void photoRequestDtoCommonTest(){
         PhotoRequestDto dto = new PhotoRequestDto();
         dto.setDescription("x".repeat(256));
-        dto.setImage(image);
+        dto.setFile(image);
 
         Set<ConstraintViolation<PhotoRequestDto>> violations = validator.validate(dto);
         Assertions.assertEquals(1, violations.size());
@@ -97,7 +95,7 @@ public class DTOsValidationTest {
     public void photoMapperRequestDtoToEntityTest(){
         PhotoRequestDto dto = new PhotoRequestDto();
         dto.setDescription("Description");
-        dto.setImage(image);
+        dto.setFile(image);
         LocalDateTime dateTime = LocalDateTime.now();
         String path = "random/path/to/file.jpg";
         Profile author = new Profile();
@@ -146,7 +144,7 @@ public class DTOsValidationTest {
         photo.setPublishDate(dateTime);
 
         PhotoRequestDto dto = new PhotoRequestDto();
-        dto.setImage(null);
+        dto.setFile(null);
         dto.setDescription("NewDescription");
         Photo updatedPhoto = PhotoMapper.INSTANCE.updateEntityWithRequestDto(dto);
 

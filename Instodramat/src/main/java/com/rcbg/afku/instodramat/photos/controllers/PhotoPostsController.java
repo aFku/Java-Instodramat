@@ -16,15 +16,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("api/v1/photos")
+@RequestMapping("/api/v1/photos")
 public class PhotoPostsController {
 
-    private final PhotoRepository repository;
     private final PhotoManager photoManager;
 
     @Autowired
-    public PhotoPostsController(PhotoRepository repository, PhotoManager photoManager) {
-        this.repository = repository;
+    public PhotoPostsController(PhotoManager photoManager) {
         this.photoManager = photoManager;
     }
 

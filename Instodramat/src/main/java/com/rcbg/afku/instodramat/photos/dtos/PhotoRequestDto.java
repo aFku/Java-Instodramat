@@ -19,7 +19,7 @@ public class PhotoRequestDto {
 
     @Null(message = "image : you cannot update existing photo file", groups = OnUpdate.class)
     @NotNull(message = "image : image cannot be null", groups = OnCreate.class)
-    private MultipartFile image;
+    private MultipartFile file;
 
     @Size(max = 255, message = "description : max size for description is 255 characters")
     private String description;

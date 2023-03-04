@@ -44,7 +44,7 @@ public class PhotoManager {
     public PhotoResponseDto createPhotoPost(@Valid PhotoRequestDto requestDto, String userId){
         LocalDateTime publishDate = LocalDateTime.now();
         try {
-            String pathToSavedPhoto = imageSaver.saveMultipartFile(requestDto.getImage(), imageSaver.generateBase64Name(userId, publishDate));
+            String pathToSavedPhoto = imageSaver.saveMultipartFile(requestDto.getFile(), imageSaver.generateBase64Name(userId, publishDate));
             Photo requestedEntity = PhotoMapper.INSTANCE.requestDtoToEntity(requestDto, publishDate, pathToSavedPhoto, profileManager.getDomainObjectByUserId(userId));
             repository.save(requestedEntity);
             logger.info("UserId: " + userId + " created photo with ID: " + requestedEntity.getPhotoId() + " saved under path: " + pathToSavedPhoto);

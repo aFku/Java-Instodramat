@@ -2,7 +2,6 @@ package com.rcbg.afku.instodramat.unittests.photos;
 
 import com.rcbg.afku.instodramat.authusers.domain.Profile;
 import com.rcbg.afku.instodramat.authusers.services.ProfileManager;
-import com.rcbg.afku.instodramat.photos.domain.Photo;
 import com.rcbg.afku.instodramat.photos.domain.PhotoRepository;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
@@ -25,7 +24,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 
 @ExtendWith(MockitoExtension.class)
 public class PhotoManagerTest {
@@ -54,7 +52,7 @@ public class PhotoManagerTest {
     @Test
     public void failPostCreatingWhenImageSaverFailTest() throws ImageUploadException {
         PhotoRequestDto dto = new PhotoRequestDto();
-        dto.setImage(image);
+        dto.setFile(image);
         dto.setDescription("Description");
         Mockito.when(imageSaver.saveMultipartFile(Mockito.any(), Mockito.any())).thenThrow(new ImageUploadException("Error"));
         Assertions.assertThrows(SavePhotoException.class, () -> photoManager.createPhotoPost(dto, "userId"));
@@ -68,7 +66,7 @@ public class PhotoManagerTest {
         profile.setUserId(authorId);
 
         PhotoRequestDto requestDto = new PhotoRequestDto();
-        requestDto.setImage(image);
+        requestDto.setFile(image);
         requestDto.setDescription("Description");
 
         Mockito.when(profileManager.getDomainObjectByUserId(authorId)).thenReturn(profile);
