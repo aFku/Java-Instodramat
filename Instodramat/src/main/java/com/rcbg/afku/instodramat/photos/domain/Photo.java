@@ -1,5 +1,6 @@
 package com.rcbg.afku.instodramat.photos.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.rcbg.afku.instodramat.authusers.domain.Profile;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -11,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -30,8 +32,9 @@ public class Photo {
     @ManyToOne
     Profile author;
 
-    @ManyToMany
-    Set<Profile> likes;
+    @JsonIgnoreProperties
+    @ManyToMany(fetch = FetchType.EAGER)
+    Set<Profile> likes = new HashSet<>();;
 
     public void addLike(Profile profile){
         likes.add(profile);

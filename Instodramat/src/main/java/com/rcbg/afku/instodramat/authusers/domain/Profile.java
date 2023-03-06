@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -38,7 +39,7 @@ public class Profile {
     Set<Profile> followers;
 
     @ManyToMany(mappedBy = "likes")
-    Set<Photo> likes;
+    Set<Photo> likes = new HashSet<>();
 
     public void addToFollowers(Profile profile){
         followers.add(profile);

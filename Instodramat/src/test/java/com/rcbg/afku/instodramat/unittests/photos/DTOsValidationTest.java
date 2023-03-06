@@ -1,9 +1,11 @@
 package com.rcbg.afku.instodramat.unittests.photos;
 
 import com.rcbg.afku.instodramat.authusers.domain.Profile;
+import com.rcbg.afku.instodramat.authusers.dtos.FollowStateDto;
 import com.rcbg.afku.instodramat.common.validators.groups.OnCreate;
 import com.rcbg.afku.instodramat.common.validators.groups.OnUpdate;
 import com.rcbg.afku.instodramat.photos.domain.Photo;
+import com.rcbg.afku.instodramat.photos.dtos.LikeDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoMapper;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
@@ -150,5 +152,25 @@ public class DTOsValidationTest {
 
         Assertions.assertEquals(dto.getDescription(), updatedPhoto.getDescription());
         Assertions.assertEquals(photo.getPathToFile(), updatedPhoto.getPathToFile());
+    }
+
+    @Test
+    void likeStatusDtoTest(){
+        LikeDto likeDto = new LikeDto();
+        likeDto.setState("LIKEDISLIKE");
+        Set<ConstraintViolation<LikeDto>> violations = validator.validate(likeDto);
+        Assertions.assertEquals(1, violations.size());
+        String message = violations.stream().map(ConstraintViolation::getMessage).toList().get(0);
+        Assertions.assertEquals("state : This field can contain only values: [LIKE, DISLIKE]", message);
+
+        likeDto.setState(null);
+        violations = validator.validate(likeDto);
+        Assertions.assertEquals(1, violations.size());
+        message = violations.stream().map(ConstraintViolation::getMessage).toList().get(0);
+        Assertions.assertEquals("state : This field cannot be empty", message);
+
+        likeDto.setState("LIKE");
+        violations = validator.validate(likeDto);
+        Assertions.assertEquals(0, violations.size());
     }
 }
