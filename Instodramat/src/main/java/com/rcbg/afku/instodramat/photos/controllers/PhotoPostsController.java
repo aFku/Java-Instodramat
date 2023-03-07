@@ -1,15 +1,21 @@
 package com.rcbg.afku.instodramat.photos.controllers;
 
+import com.rcbg.afku.instodramat.authusers.dtos.ProfileDto;
+import com.rcbg.afku.instodramat.authusers.responses.PageProfileResponse;
 import com.rcbg.afku.instodramat.authusers.services.ProfileManager;
 import com.rcbg.afku.instodramat.common.responses.MetaData;
+import com.rcbg.afku.instodramat.common.responses.PaginationData;
 import com.rcbg.afku.instodramat.photos.dtos.LikeDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
 import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
+import com.rcbg.afku.instodramat.photos.responses.PagePhotosResponse;
 import com.rcbg.afku.instodramat.photos.responses.SinglePhotoResponse;
 import com.rcbg.afku.instodramat.photos.services.PhotoManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -88,4 +94,55 @@ public class PhotoPostsController {
         return new ResponseEntity<>(new HttpHeaders(), HttpStatus.OK);
     }
 
+    @GetMapping("/{photoId}/likes")
+    public ResponseEntity<PageProfileResponse> getLikeList(HttpServletRequest request, @PathVariable("photoId") int photoId, Pageable pageable){
+        Page<ProfileDto> data = photoManager.getLikesFromPhotoId(photoId, pageable);
+        PaginationData paginationData = new PaginationData(data);
+        HttpHeaders headers = new HttpHeaders();
+        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
+        PageProfileResponse response = new PageProfileResponse();
+        response.setMetaData(metaData);
+        response.setPagination(paginationData);
+        response.setData(data.getContent());
+        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/profile/{profileId}")
+    public ResponseEntity<PagePhotosResponse> getPhotosOfProfile(HttpServletRequest request, @PathVariable("profileId") int profileId, Pageable pageable) {
+        Page<PhotoResponseDto> data = photoManager.getAllPhotoPostsByAuthorProfileId(profileId, pageable);
+        PaginationData paginationData = new PaginationData(data);
+        HttpHeaders headers = new HttpHeaders();
+        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
+        PagePhotosResponse response = new PagePhotosResponse();
+        response.setMetaData(metaData);
+        response.setPagination(paginationData);
+        response.setData(data.getContent());
+        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<PagePhotosResponse> getAllPhotos(HttpServletRequest request, Pageable pageable) {
+        Page<PhotoResponseDto> data = photoManager.getAllLatestPhotoPosts(pageable);
+        PaginationData paginationData = new PaginationData(data);
+        HttpHeaders headers = new HttpHeaders();
+        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
+        PagePhotosResponse response = new PagePhotosResponse();
+        response.setMetaData(metaData);
+        response.setPagination(paginationData);
+        response.setData(data.getContent());
+        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/profile/{profileId}/followers")
+    public ResponseEntity<PagePhotosResponse> getPhotosOfFollowers(HttpServletRequest request, @PathVariable("profileId") int profileId, Pageable pageable) {
+        Page<PhotoResponseDto> data = photoManager.getAllLatestPhotosFromFollowersByProfileId(profileId, pageable);
+        PaginationData paginationData = new PaginationData(data);
+        HttpHeaders headers = new HttpHeaders();
+        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
+        PagePhotosResponse response = new PagePhotosResponse();
+        response.setMetaData(metaData);
+        response.setPagination(paginationData);
+        response.setData(data.getContent());
+        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+    }
 }

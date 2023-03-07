@@ -1,7 +1,8 @@
 package com.rcbg.afku.instodramat.photos.services;
 
 import com.rcbg.afku.instodramat.authusers.domain.Profile;
-import com.rcbg.afku.instodramat.authusers.responses.PageProfileResponse;
+import com.rcbg.afku.instodramat.authusers.dtos.ProfileDto;
+import com.rcbg.afku.instodramat.authusers.dtos.ProfileMapper;
 import com.rcbg.afku.instodramat.authusers.services.ProfileManager;
 import com.rcbg.afku.instodramat.common.validators.groups.OnCreate;
 import com.rcbg.afku.instodramat.common.validators.groups.OnUpdate;
@@ -110,22 +111,26 @@ public class PhotoManager {
     }
 
     // List with likes for given photo
-    public Page<PageProfileResponse> getLikesFromPhotoId(int photoId, Pageable pageable){
-        return null;
+    public Page<ProfileDto> getLikesFromPhotoId(int photoId, Pageable pageable){
+        getDomainObjectByPhotoId(photoId); // check if exists
+        Page<Profile> data = repository.getLikeList(photoId, pageable);
+        return data.map(ProfileMapper.INSTANCE::toDto);
     }
 
     // List with photos owned by given profile (List in profile page)
     public Page<PhotoResponseDto> getAllPhotoPostsByAuthorProfileId(int profileId, Pageable pageable){
-        return null;
+        profileManager.getOneProfileById(profileId); // exists check
+        return repository.findAllByAuthorProfileId(profileId, pageable).map(PhotoMapper.INSTANCE::EntityToResponseDto);
     }
 
     // List All photos (Community page)
     public Page<PhotoResponseDto> getAllLatestPhotoPosts(Pageable pageable){
-        return null;
+        return repository.findAll(pageable).map(PhotoMapper.INSTANCE::EntityToResponseDto);
     }
 
     // List all your photos friends (Your main page)
     public Page<PhotoResponseDto> getAllLatestPhotosFromFollowersByProfileId(int profileId, Pageable pageable){
-        return null;
+        profileManager.getOneProfileById(profileId); // exists check
+        return repository.findAllFromFollowers(profileId, pageable).map(PhotoMapper.INSTANCE::EntityToResponseDto);
     }
 }

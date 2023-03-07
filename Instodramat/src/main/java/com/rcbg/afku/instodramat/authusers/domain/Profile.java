@@ -36,9 +36,10 @@ public class Profile {
             inverseJoinColumns = @JoinColumn(name = "follower_person_id")
     )
     @JsonIgnoreProperties
-    Set<Profile> followers;
+    Set<Profile> followers = new HashSet<>();
 
     @ManyToMany(mappedBy = "likes")
+    @JsonIgnoreProperties
     Set<Photo> likes = new HashSet<>();
 
     public void addToFollowers(Profile profile){
