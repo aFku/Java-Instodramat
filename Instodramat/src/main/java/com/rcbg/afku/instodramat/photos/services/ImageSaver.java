@@ -5,6 +5,7 @@ import com.rcbg.afku.instodramat.photos.exceptions.ImageUploadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -12,14 +13,20 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
+@Service
 public class ImageSaver {
 
     private final Logger logger = LoggerFactory.getLogger(ProfileManager.class);
@@ -42,13 +49,19 @@ public class ImageSaver {
     @Value("${photos.dimensions.expected-ratio-to-one}")
     int expectedRatio;
 
+    @Value("${photos.random.name-generator-seed}")
+    long randomSeed;
 
-    public String generateBase64Name(String userId, LocalDate date, int photoId){
-        String stringToEncode = userId + date.toString() + photoId;
+
+    public String generateBase64Name(String userId, LocalDateTime date){
+        Random random = new Random(randomSeed);
+        byte[] salt = new byte[4];
+        random.nextBytes(salt);
+        String stringToEncode = userId + "_" + date.toString() + "_" + UUID.nameUUIDFromBytes(salt);
         return Base64.getEncoder().encodeToString(stringToEncode.getBytes());
     }
 
-    private InputStream getInputStreamFromMultipart(MultipartFile image){
+    private InputStream getInputStreamFromMultipart(MultipartFile image) throws ImageUploadException {
         try{
             return image.getInputStream();
         } catch (IOException ex){
@@ -57,21 +70,21 @@ public class ImageSaver {
         }
     }
 
-    private void validateExtension(MultipartFile image){
+    private void validateExtension(MultipartFile image) throws ImageUploadException {
         String imageExtension = image.getContentType();
         if(imageExtension == null || ! extensions.contains(imageExtension.toUpperCase())) {
             throw new ImageUploadException("Invalid image extension: " + imageExtension + " . Allowed only: " + extensions);
         }
     }
 
-    private void validateSize(MultipartFile image){
+    private void validateSize(MultipartFile image) throws ImageUploadException {
         long imageSize = image.getSize();
         if(imageSize > maxSize) {
             throw new ImageUploadException("File is too large. Max file size is: " + maxSizeMessageInMb + " MB");
         }
     }
 
-    private void validateDimensions(MultipartFile image){
+    private void validateDimensions(MultipartFile image) throws ImageUploadException{
         float height, width;
 
         try {
@@ -100,18 +113,18 @@ public class ImageSaver {
         }
     }
 
-    public void validateMultipartImage(MultipartFile image){
+    public void validateMultipartImage(MultipartFile image) throws ImageUploadException{
         validateSize(image);
         validateExtension(image);
         validateDimensions(image);
     }
 
-    public String saveMultipartFile(MultipartFile image, String name){
+    public String saveMultipartFile(MultipartFile image, String name) throws ImageUploadException{
         logger.info("Starting saving file: " + image.getName() + " as file: " + name);
         validateMultipartImage(image);
         Path storagePath = Paths.get(storageLocalization);
         InputStream inputStream = getInputStreamFromMultipart(image);
-        Path filePath = storagePath.resolve(name);
+        Path filePath = storagePath.resolve(name + ".png");
         try{
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
             logger.info("File: " + name + " saved!");
@@ -168,5 +181,13 @@ public class ImageSaver {
 
     public void setExpectedRatio(int expectedRatio) {
         this.expectedRatio = expectedRatio;
+    }
+
+    public long getRandomSeed() {
+        return randomSeed;
+    }
+
+    public void setRandomSeed(long randomSeed) {
+        this.randomSeed = randomSeed;
     }
 }
