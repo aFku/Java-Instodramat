@@ -5,14 +5,14 @@ import com.rcbg.afku.instodramat.authusers.responses.PageProfileResponse;
 import com.rcbg.afku.instodramat.authusers.services.ProfileManager;
 import com.rcbg.afku.instodramat.common.responses.MetaData;
 import com.rcbg.afku.instodramat.common.responses.PaginationData;
-import com.rcbg.afku.instodramat.photos.dtos.LikeDto;
-import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
-import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
+import com.rcbg.afku.instodramat.photos.dtos.*;
+import com.rcbg.afku.instodramat.photos.responses.PageCommentsResponse;
 import com.rcbg.afku.instodramat.photos.responses.PagePhotosResponse;
+import com.rcbg.afku.instodramat.photos.responses.SingleCommentResponse;
 import com.rcbg.afku.instodramat.photos.responses.SinglePhotoResponse;
+import com.rcbg.afku.instodramat.photos.services.CommentManager;
 import com.rcbg.afku.instodramat.photos.services.PhotoManager;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,10 +33,13 @@ public class PhotoPostsController {
 
     private final ProfileManager profileManager;
 
+    private final CommentManager commentManager;
+
     @Autowired
-    public PhotoPostsController(PhotoManager photoManager, ProfileManager profileManager) {
+    public PhotoPostsController(PhotoManager photoManager, ProfileManager profileManager, CommentManager commentManager) {
         this.photoManager = photoManager;
         this.profileManager = profileManager;
+        this.commentManager = commentManager;
     }
 
     @PostMapping(consumes = MediaType.ALL_VALUE) // Temporary All for developing
@@ -144,5 +147,38 @@ public class PhotoPostsController {
         response.setPagination(paginationData);
         response.setData(data.getContent());
         return new ResponseEntity<>(response, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/{photoId}/comments")
+    public ResponseEntity<PageCommentsResponse> getCommentsFromPhoto(HttpServletRequest request, @PathVariable("photoId") int photoId, Pageable pageable){
+        Page<CommentResponseDto> data = commentManager.getCommentsFromPhoto(photoId, pageable);
+        PaginationData paginationData = new PaginationData(data);
+        HttpHeaders headers = new HttpHeaders();
+        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
+        PageCommentsResponse response = new PageCommentsResponse();
+        response.setData(data.getContent());
+        response.setMetaData(metaData);
+        response.setPagination(paginationData);
+        response.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).getPhoto(request, photoId, null)).withRel("photo").withType("GET"));
+        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+    }
+
+    @PostMapping("/{photoId}/comments")
+    public ResponseEntity<SingleCommentResponse> createCommentForPhoto(HttpServletRequest request, @PathVariable("photoId") int photoId, @RequestBody CommentRequestDto requestDto, Authentication authentication){
+        CommentResponseDto data = commentManager.createCommentForPhoto(requestDto, photoId, authentication.getName());
+        HttpHeaders headers = new HttpHeaders();
+        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.CREATED.value(), "object");
+        SingleCommentResponse response = new SingleCommentResponse();
+        response.setData(data);
+        response.setMetaData(metaData);
+        response.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).getPhoto(request, photoId, null)).withRel("photo").withType("GET"));
+        return new ResponseEntity<>(response, headers, HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{photoId}/comments/{commentId}")
+    @PreAuthorize("@commentManager.checkOwnership(commentId, authentication.getName())")
+    public ResponseEntity<Void> deleteComment(@PathVariable("photoId") int photoId, @PathVariable("commentId") int commentId){
+        commentManager.deleteCommentFromPhotoById(photoId, commentId);
+        return new ResponseEntity<>(new HttpHeaders(), HttpStatus.NO_CONTENT);
     }
 }
