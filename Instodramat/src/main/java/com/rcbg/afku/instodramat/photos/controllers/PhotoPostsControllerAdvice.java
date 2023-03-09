@@ -3,6 +3,7 @@ package com.rcbg.afku.instodramat.photos.controllers;
 import com.rcbg.afku.instodramat.authusers.controllers.ProfileController;
 import com.rcbg.afku.instodramat.common.responses.ErrorResponse;
 import com.rcbg.afku.instodramat.common.responses.MetaData;
+import com.rcbg.afku.instodramat.photos.exceptions.CommentNotFoundException;
 import com.rcbg.afku.instodramat.photos.exceptions.LikeException;
 import com.rcbg.afku.instodramat.photos.exceptions.PhotoNotFoundException;
 import com.rcbg.afku.instodramat.photos.exceptions.SavePhotoException;
@@ -34,9 +35,9 @@ public class PhotoPostsControllerAdvice {
         return new ResponseEntity<>(response, headers, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler({PhotoNotFoundException.class})
+    @ExceptionHandler({PhotoNotFoundException.class, CommentNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ResponseEntity<ErrorResponse> PostNotFoundHandler(PhotoNotFoundException ex, HttpServletRequest request){
+    public ResponseEntity<ErrorResponse> PostNotFoundHandler(RuntimeException ex, HttpServletRequest request){
         logger.error("Fetching error: " + ex);
         HttpHeaders headers = new HttpHeaders();
         MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.NOT_FOUND.value(), "error");

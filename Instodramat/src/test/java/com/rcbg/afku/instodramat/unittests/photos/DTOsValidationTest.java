@@ -4,11 +4,9 @@ import com.rcbg.afku.instodramat.authusers.domain.Profile;
 import com.rcbg.afku.instodramat.authusers.dtos.FollowStateDto;
 import com.rcbg.afku.instodramat.common.validators.groups.OnCreate;
 import com.rcbg.afku.instodramat.common.validators.groups.OnUpdate;
+import com.rcbg.afku.instodramat.photos.domain.Comment;
 import com.rcbg.afku.instodramat.photos.domain.Photo;
-import com.rcbg.afku.instodramat.photos.dtos.LikeDto;
-import com.rcbg.afku.instodramat.photos.dtos.PhotoMapper;
-import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
-import com.rcbg.afku.instodramat.photos.dtos.PhotoResponseDto;
+import com.rcbg.afku.instodramat.photos.dtos.*;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -19,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -155,7 +154,7 @@ public class DTOsValidationTest {
     }
 
     @Test
-    void likeStatusDtoTest(){
+    public void likeStatusDtoTest(){
         LikeDto likeDto = new LikeDto();
         likeDto.setState("LIKEDISLIKE");
         Set<ConstraintViolation<LikeDto>> violations = validator.validate(likeDto);
@@ -172,5 +171,74 @@ public class DTOsValidationTest {
         likeDto.setState("LIKE");
         violations = validator.validate(likeDto);
         Assertions.assertEquals(0, violations.size());
+    }
+
+    @Test
+    public void testCommentRequestDtoOk(){
+        CommentRequestDto dto = new CommentRequestDto();
+        dto.setContent("Regular content");
+
+        Set<ConstraintViolation<CommentRequestDto>> violations = validator.validate(dto);
+        Assertions.assertEquals(0, violations.size());
+    }
+
+    @Test
+    public void testCommentRequestDtoFail(){
+        CommentRequestDto dto = new CommentRequestDto();
+        dto.setContent("x".repeat(256));
+
+        Set<ConstraintViolation<CommentRequestDto>> violations = validator.validate(dto);
+        Assertions.assertEquals(1, violations.size());
+        Assertions.assertEquals("content : Max size for this field is 255", violations.stream().map(ConstraintViolation::getMessage).toList().get(0));
+
+        dto.setContent(" ");
+        violations = validator.validate(dto);
+        Assertions.assertEquals(1, violations.size());
+        Assertions.assertEquals("content : This field cannot be empty", violations.stream().map(ConstraintViolation::getMessage).toList().get(0));
+
+        dto.setContent(null);
+        violations = validator.validate(dto);
+        Assertions.assertEquals(1, violations.size());
+        Assertions.assertEquals("content : This field cannot be empty", violations.stream().map(ConstraintViolation::getMessage).toList().get(0));
+    }
+
+    @Test
+    public void testCommentMapperRequestDtoToEntity(){
+        CommentRequestDto requestDto = new CommentRequestDto();
+        requestDto.setContent("Typical content");
+        LocalDateTime date = LocalDateTime.now();
+        Photo photo = new Photo();
+        photo.setPhotoId(5);
+        Profile profile = new Profile();
+        profile.setProfileId(54);
+
+        Comment comment = CommentMapper.INSTANCE.requestDtoToEntity(requestDto, date, profile, photo);
+        Assertions.assertEquals(requestDto.getContent(), comment.getContent());
+        Assertions.assertEquals(date, comment.getPublishDate());
+        Assertions.assertEquals(profile.getProfileId(), comment.getAuthor().getProfileId());
+        Assertions.assertEquals(photo.getPhotoId(), comment.getPhoto().getPhotoId());
+    }
+
+    @Test
+    public void testCommentMapperEntityToResponseDto(){
+        Comment comment = new Comment();
+        comment.setCommentId(32);
+        comment.setContent("Content/txt");
+        LocalDateTime date = LocalDateTime.now();
+        comment.setPublishDate(date);
+        Photo photo = new Photo();
+        photo.setPhotoId(5);
+        comment.setPhoto(photo);
+        Profile profile = new Profile();
+        profile.setProfileId(54);
+        comment.setAuthor(profile);
+
+
+        CommentResponseDto responseDto = CommentMapper.INSTANCE.EntityToResponseDto(comment);
+        Assertions.assertEquals(comment.getContent(), responseDto.getContent());
+        Assertions.assertEquals(comment.getCommentId(), responseDto.getCommentId());
+        Assertions.assertEquals(comment.getPublishDate(), responseDto.getPublishDate());
+        Assertions.assertEquals(comment.getAuthor().getProfileId(), responseDto.getAuthorId());
+        Assertions.assertEquals(comment.getPhoto().getPhotoId(), responseDto.getPhotoId());
     }
 }

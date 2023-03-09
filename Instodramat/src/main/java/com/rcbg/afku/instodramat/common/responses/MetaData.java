@@ -23,6 +23,6 @@ public class MetaData {
 
     @Override
     public String toString(){
-            return "{ \"timestamp\": \"" + this.timestamp + "\", \"uri\": \"" + this.uri + "\", \"statusCode\": \"" + this.timestamp + "\"}";
+            return "{ \"timestamp\": \"" + this.timestamp + "\", \"uri\": \"" + this.uri + "\", \"statusCode\": \"" + this.statusCode + "\"}";
     }
 }
