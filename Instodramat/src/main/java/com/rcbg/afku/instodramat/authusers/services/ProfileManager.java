@@ -46,6 +46,10 @@ public class ProfileManager {
         return profileRepository.findProfileByProfileId(profileId).orElseThrow(() -> new ProfileNotFound("There is no profile with profileId: " + profileId));
     }
 
+    public Profile getDomainObjectByUserId(String userId){
+        return profileRepository.findProfileByUserId(userId).orElseThrow(() -> new ProfileNotFound("There is no profile related to userId: " + userId));
+    }
+
     public String profileIdToUserId(int profileId){
         return getDomainObjectByProfileId(profileId).getUserId();
     }
@@ -108,7 +112,7 @@ public class ProfileManager {
     @Transactional
     public void setFollowProfileState(String userId, int profileId, @Valid FollowStateDto state){
         Profile profileToFollow = this.getDomainObjectByProfileId(profileId);
-        Profile initiatorProfile = profileRepository.findProfileByUserId(userId).orElseThrow(() -> new ProfileNotFound("There is no profile related to userId: " + userId));
+        Profile initiatorProfile = this.getDomainObjectByUserId(userId);
         if(profileToFollow.equals(initiatorProfile)){
             throw new ProfileFollowException("You cannot follow or unfollow yourself");
         }
