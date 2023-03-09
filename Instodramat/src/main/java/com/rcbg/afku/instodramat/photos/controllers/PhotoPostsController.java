@@ -176,7 +176,7 @@ public class PhotoPostsController {
     }
 
     @DeleteMapping("/{photoId}/comments/{commentId}")
-    @PreAuthorize("@commentManager.checkOwnership(commentId, authentication.getName())")
+    @PreAuthorize("@commentManager.checkOwnership(#commentId, authentication.getName())")
     public ResponseEntity<Void> deleteComment(@PathVariable("photoId") int photoId, @PathVariable("commentId") int commentId){
         commentManager.deleteCommentFromPhotoById(photoId, commentId);
         return new ResponseEntity<>(new HttpHeaders(), HttpStatus.NO_CONTENT);

@@ -1,6 +1,7 @@
 package com.rcbg.afku.instodramat.integrationtests.photos;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
 import com.rcbg.afku.instodramat.authusers.domain.Profile;
 import com.rcbg.afku.instodramat.authusers.domain.ProfileRepository;
 import com.rcbg.afku.instodramat.authusers.dtos.ProfileDto;
@@ -14,6 +15,7 @@ import com.rcbg.afku.instodramat.photos.domain.PhotoRepository;
 import com.rcbg.afku.instodramat.photos.dtos.CommentMapper;
 import com.rcbg.afku.instodramat.photos.dtos.CommentRequestDto;
 import com.rcbg.afku.instodramat.photos.services.CommentManager;
+import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,10 +23,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -69,6 +73,7 @@ public class ManageCommentsTest extends TestContainersBase {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).apply(springSecurity()).build();
         profileRepository.deleteAll();
         photoRepository.deleteAll();
+        commentRepository.deleteAll();
         mapper = new ObjectMapper();
     }
 
@@ -132,11 +137,133 @@ public class ManageCommentsTest extends TestContainersBase {
                 .andExpect(status().isNotFound());
     }
 
-    // Create comment for own photo
-    // Create comment for not own photo
-    // create comment with wrong request data
+    @Test
+    public void testCreateCommentForOwnPhoto() throws Exception {
+        int[] person = createProfileWithImage("bbrumhead0");
 
-    // Delete comment with ownership
-    // delete comment without ownership
-    // Delete commentId not related to photo
+        CommentRequestDto requestDto = new CommentRequestDto("Hello!123");
+
+
+        String jwt = obtainJwtTokenResponse("bbrumhead0", "s3cr3t");
+        String content = this.mapper.writeValueAsString(requestDto);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/photos/" + person[1] + "/comments").content(content).contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.content").value(requestDto.getContent()))
+                .andReturn();
+
+        int commentId = JsonPath.read(result.getResponse().getContentAsString(), "$.data.commentId");
+        Assertions.assertTrue(commentRepository.existsById(commentId));
+    }
+
+    @Test
+    public void testCreateCommentForNotOwnedPhoto() throws Exception {
+        int[] person1 = createProfileWithImage("bbrumhead0");
+
+        CommentRequestDto requestDto = new CommentRequestDto("Hello!123 It is not mine");
+
+        createProfileWithImage("nspeers7");
+        String jwt = obtainJwtTokenResponse("nspeers7", "s3cr3t");
+        String content = this.mapper.writeValueAsString(requestDto);
+        MvcResult result = mockMvc.perform(post("/api/v1/photos/" + person1[1] + "/comments").content(content).contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.content").value(requestDto.getContent()))
+                .andReturn();
+
+        int commentId = JsonPath.read(result.getResponse().getContentAsString(), "$.data.commentId");
+        Assertions.assertTrue(commentRepository.existsById(commentId));
+    }
+
+    @Test
+    public void testCreateCommentWithWrongData() throws Exception {
+        int[] person1 = createProfileWithImage("bbrumhead0");
+
+        CommentRequestDto requestDto = new CommentRequestDto(null);
+
+        createProfileWithImage("nspeers7");
+        String jwt = obtainJwtTokenResponse("nspeers7", "s3cr3t");
+        String content = this.mapper.writeValueAsString(requestDto);
+        mockMvc.perform(post("/api/v1/photos/" + person1[1] + "/comments").content(content).contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCreateCommentForPhotoThatNotExists() throws Exception {
+        createProfileWithImage("bbrumhead0");
+
+        CommentRequestDto requestDto = new CommentRequestDto("Hello!123 It is not mine");
+
+        createProfileWithImage("nspeers7");
+        String jwt = obtainJwtTokenResponse("nspeers7", "s3cr3t");
+        String content = this.mapper.writeValueAsString(requestDto);
+        mockMvc.perform(post("/api/v1/photos/80/comments").content(content).contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testDeleteOwnComment() throws Exception {
+        int[] person = createProfileWithImage("bbrumhead0");
+
+        LocalDateTime publishDate = LocalDateTime.now();
+        Profile commentAuthor = profileManager.getDomainObjectByProfileId(person[0]);
+        Photo photo = photoRepository.findById(person[1]).orElse(null);
+        Assertions.assertNotNull(photo);
+        CommentRequestDto requestDto = new CommentRequestDto("Hello!123");
+
+        Comment comment = CommentMapper.INSTANCE.requestDtoToEntity(requestDto, publishDate, commentAuthor, photo);
+        commentRepository.save(comment);
+
+        String jwt = obtainJwtTokenResponse("bbrumhead0", "s3cr3t");
+        mockMvc.perform(delete("/api/v1/photos/" + person[1] + "/comments/" + comment.getCommentId()).header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                .andExpect(status().isNoContent());
+
+        Assertions.assertTrue(commentRepository.findAll().isEmpty());
+    }
+
+    @Test
+    public void testDeleteNotOwnedComment() throws Exception {
+        int[] person = createProfileWithImage("bbrumhead0");
+
+        LocalDateTime publishDate = LocalDateTime.now();
+        Profile commentAuthor = profileManager.getDomainObjectByProfileId(person[0]);
+        Photo photo = photoRepository.findById(person[1]).orElse(null);
+        Assertions.assertNotNull(photo);
+        CommentRequestDto requestDto = new CommentRequestDto("Hello!123");
+
+        Comment comment = CommentMapper.INSTANCE.requestDtoToEntity(requestDto, publishDate, commentAuthor, photo);
+        commentRepository.save(comment);
+
+
+        createProfileWithImage("nspeers7");
+        String jwt = obtainJwtTokenResponse("nspeers7", "s3cr3t");
+        mockMvc.perform(delete("/api/v1/photos/" + person[1] + "/comments/" + comment.getCommentId()).header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void testDeleteCommentNotRelatedToPhoto() throws Exception {
+        int[] person = createProfileWithImage("bbrumhead0");
+
+        LocalDateTime publishDate = LocalDateTime.now();
+        Profile commentAuthor = profileManager.getDomainObjectByProfileId(person[0]);
+        Photo photo = photoRepository.findById(person[1]).orElse(null);
+        Assertions.assertNotNull(photo);
+        CommentRequestDto requestDto = new CommentRequestDto("Hello!123");
+
+        Comment comment = CommentMapper.INSTANCE.requestDtoToEntity(requestDto, publishDate, commentAuthor, photo);
+        commentRepository.save(comment);
+
+        String jwt = obtainJwtTokenResponse("bbrumhead0", "s3cr3t");
+        mockMvc.perform(delete("/api/v1/photos/" + (person[1] + 1) + "/comments/" + comment.getCommentId()).header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testDeleteCommentThatNotExists() throws Exception {
+        int[] person = createProfileWithImage("bbrumhead0");
+
+        String jwt = obtainJwtTokenResponse("bbrumhead0", "s3cr3t");
+        mockMvc.perform(delete("/api/v1/photos/" + person[1] + "/comments/553").header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                .andExpect(status().isNotFound());
+    }
 }
