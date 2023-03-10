@@ -24,7 +24,7 @@ public class UserProfileFilter extends OncePerRequestFilter{
     JwtDecoder decoder;
 
     @Autowired
-    private UserProfileFilter(@Qualifier("instodramatJwtDecoder") JwtDecoder decoder, ProfileRepository profileRepository){
+    public UserProfileFilter(@Qualifier("instodramatJwtDecoder") JwtDecoder decoder, ProfileRepository profileRepository){
         this.decoder = decoder;
         this.profileRepository = profileRepository;
     }

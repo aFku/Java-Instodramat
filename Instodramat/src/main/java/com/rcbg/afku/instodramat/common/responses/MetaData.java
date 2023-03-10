@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -11,11 +12,11 @@ import java.time.Instant;
 public class MetaData {
     private String uri;
     private int statusCode;
-    private Instant timestamp;
+    private LocalDateTime timestamp;
     private String contentType;
 
     public MetaData(String uri, int statusCode, String contentType){
-        this.timestamp = Instant.now();
+        this.timestamp = LocalDateTime.now();
         this.uri = uri;
         this.statusCode = statusCode;
         this.contentType = contentType;

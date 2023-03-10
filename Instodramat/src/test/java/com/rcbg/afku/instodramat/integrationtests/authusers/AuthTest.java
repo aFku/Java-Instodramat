@@ -4,14 +4,19 @@ import com.rcbg.afku.instodramat.authusers.domain.DisplayMode;
 import com.rcbg.afku.instodramat.authusers.domain.Gender;
 import com.rcbg.afku.instodramat.authusers.domain.Profile;
 import com.rcbg.afku.instodramat.authusers.domain.ProfileRepository;
+import com.rcbg.afku.instodramat.authusers.filters.ExceptionPropagatorFilter;
+import com.rcbg.afku.instodramat.authusers.filters.UserProfileFilter;
 import com.rcbg.afku.instodramat.integrationtests.TestContainersBase;
+import jakarta.servlet.Filter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -37,9 +42,20 @@ public class AuthTest extends TestContainersBase {
 
     private MockMvc mockMvc;
 
+    @Autowired
+    private ExceptionPropagatorFilter exceptionPropagatorFilter;
+
+    @Autowired
+    private UserProfileFilter userProfileFilter;
+
     @BeforeEach
     public void setup(){
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).apply(springSecurity()).build();
+        this.mockMvc = MockMvcBuilders
+                .webAppContextSetup(this.webApplicationContext)
+                .apply(springSecurity())
+                .addFilter(exceptionPropagatorFilter, "/api/v1/profiles/1")
+                .addFilter(userProfileFilter, "/api/v1/profiles/1")
+                .build();
         profileRepository.deleteAll();
     }
 
@@ -74,6 +90,8 @@ public class AuthTest extends TestContainersBase {
     @Test
     public void testAccessResourceWithValidJwtWithoutProfile() throws Exception{
         String token = obtainJwtTokenResponse("bbrumhead0", "s3cr3t");
+
+        System.out.println(profileRepository.findAll()); // Debug
 
         MvcResult response = mockMvc.perform(get("/api/v1/profiles/1").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(jsonPath("$.messages[0]").value("You do not have a profile. Please sign up with registration endpoint.")).andReturn();
