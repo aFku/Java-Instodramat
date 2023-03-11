@@ -25,6 +25,9 @@ public class SecurityConfig {
         http.authorizeHttpRequests().requestMatchers("/api/v1/profile/create").permitAll();
         http.authorizeHttpRequests().requestMatchers("/api/v1/**").authenticated();
         http.authorizeHttpRequests().requestMatchers("/v3/api-docs").permitAll();
+        http.authorizeHttpRequests().requestMatchers("/v3/api-docs.yaml").permitAll();
+        http.authorizeHttpRequests().requestMatchers("/v3/api-docs/**").permitAll();
+        http.authorizeHttpRequests().requestMatchers("/swagger-ui/**").permitAll();
         return http.build();
     }
 }
