@@ -16,14 +16,6 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    private final UserProfileFilter userProfileFilter;
-    private final ExceptionPropagatorFilter exceptionPropagatorFilter;
-
-    @Autowired
-    public SecurityConfig(UserProfileFilter userProfileFilter, ExceptionPropagatorFilter exceptionPropagatorFilter){
-        this.userProfileFilter = userProfileFilter;
-        this.exceptionPropagatorFilter = exceptionPropagatorFilter;
-    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -31,8 +23,11 @@ public class SecurityConfig {
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.csrf().disable();
         http.authorizeHttpRequests().requestMatchers("/api/v1/profile/create").permitAll();
-        http.authorizeHttpRequests().requestMatchers("/api/v1/**").authenticated().and().addFilterAfter(userProfileFilter, AuthorizationFilter.class);
-        http.addFilterBefore(exceptionPropagatorFilter, UserProfileFilter.class);
+        http.authorizeHttpRequests().requestMatchers("/api/v1/**").authenticated();
+        http.authorizeHttpRequests().requestMatchers("/v3/api-docs").permitAll();
+        http.authorizeHttpRequests().requestMatchers("/v3/api-docs.yaml").permitAll();
+        http.authorizeHttpRequests().requestMatchers("/v3/api-docs/**").permitAll();
+        http.authorizeHttpRequests().requestMatchers("/swagger-ui/**").permitAll();
         return http.build();
     }
 }
