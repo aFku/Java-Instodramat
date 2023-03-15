@@ -10,16 +10,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -132,7 +128,7 @@ public class ImageSaver {
             logger.error("Failed on saving file to storage: " + ex.getMessage());
             throw new ImageUploadException("Cannot save image due to corrupted data");
         }
-        return filePath.toString();
+        return filePath.toString().replace("\\", "/");
     }
 
     public String getStorageLocalization() {

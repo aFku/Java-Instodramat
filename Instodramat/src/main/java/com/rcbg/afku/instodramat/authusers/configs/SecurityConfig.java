@@ -28,6 +28,8 @@ public class SecurityConfig {
         http.authorizeHttpRequests().requestMatchers("/v3/api-docs.yaml").permitAll();
         http.authorizeHttpRequests().requestMatchers("/v3/api-docs/**").permitAll();
         http.authorizeHttpRequests().requestMatchers("/swagger-ui/**").permitAll();
+        http.authorizeHttpRequests().requestMatchers("/images/*").authenticated();
+        http.authorizeHttpRequests().anyRequest().permitAll();
         return http.build();
     }
 }

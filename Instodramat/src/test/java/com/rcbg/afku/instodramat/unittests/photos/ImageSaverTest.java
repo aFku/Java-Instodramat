@@ -55,7 +55,7 @@ public class ImageSaverTest {
         imageSaver.setExpectedRatio(1);
         imageSaver.setMaxSize(1048576);
         imageSaver.setMaxDimensions(2048);
-        imageSaver.setStorageLocalization("storage/");
+        imageSaver.setStorageLocalization("images/");
         imageSaver.setMaxSizeMessageInMb(10);
         imageSaver.setRandomSeed(941);
     }
@@ -101,7 +101,7 @@ public class ImageSaverTest {
         String name = "test_name";
 
         String savedName = imageSaver.saveMultipartFile(file, name);
-        assertEquals(savedName, "storage\\" + name + ".png");
+        assertEquals("images/" + name + ".png", savedName);
         Files.delete(Paths.get(savedName));
     }
 
