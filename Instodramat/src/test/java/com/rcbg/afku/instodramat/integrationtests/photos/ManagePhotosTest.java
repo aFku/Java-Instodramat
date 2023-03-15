@@ -1,11 +1,9 @@
 package com.rcbg.afku.instodramat.integrationtests.photos;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.jayway.jsonpath.JsonPath;
 import com.rcbg.afku.instodramat.authusers.domain.Profile;
 import com.rcbg.afku.instodramat.authusers.domain.ProfileRepository;
-import com.rcbg.afku.instodramat.authusers.dtos.FollowState;
-import com.rcbg.afku.instodramat.authusers.dtos.FollowStateDto;
 import com.rcbg.afku.instodramat.authusers.dtos.ProfileDto;
 import com.rcbg.afku.instodramat.authusers.dtos.ProfileMapper;
 import com.rcbg.afku.instodramat.authusers.services.ProfileManager;
@@ -14,17 +12,13 @@ import com.rcbg.afku.instodramat.photos.domain.Photo;
 import com.rcbg.afku.instodramat.photos.domain.PhotoRepository;
 import com.rcbg.afku.instodramat.photos.dtos.LikeDto;
 import com.rcbg.afku.instodramat.photos.dtos.LikeState;
-import com.rcbg.afku.instodramat.photos.dtos.PhotoRequestDto;
-import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
@@ -33,7 +27,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -573,6 +566,52 @@ public class ManagePhotosTest extends TestContainersBase {
         mockMvc.perform(get("/api/v1/photos/profile/" + profiles.get("rmelbourn4").getProfileId() + "/followers").header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.pagination.totalElements").value(10));
+    }
+
+    @Test
+    public void getImageFromPostSuccess() throws Exception {
+        String jwt = obtainJwtTokenResponse("bbrumhead0", "s3cr3t");
+        ProfileDto createDto = profileManager.jwtToProfileDto("Bearer " + jwt);
+        Profile profile = ProfileMapper.INSTANCE.toEntity(createDto);
+        profileRepository.save(profile);
+
+        MvcResult response = mockMvc.perform(multipart("/api/v1/photos").file(prepareMultipartFile("OK.png")).param("description", "testDescription").header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                                    .andExpect(status().isCreated())
+                                    .andExpect(jsonPath("$.data.description").value("testDescription"))
+                                    .andExpect(jsonPath("$.data.authorId").value(profile.getProfileId()))
+                                    .andReturn();
+
+        String imagePath = JsonPath.read(response.getResponse().getContentAsString(), "$.data.image");
+        System.out.println("/" + imagePath); // Debug
+        mockMvc.perform(get("/" + imagePath).header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)).andExpect(status().isOk());
+    }
+
+    @Test
+    public void getImageFromPostNotFound() throws Exception {
+        String jwt = obtainJwtTokenResponse("bbrumhead0", "s3cr3t");
+        ProfileDto createDto = profileManager.jwtToProfileDto("Bearer " + jwt);
+        Profile profile = ProfileMapper.INSTANCE.toEntity(createDto);
+        profileRepository.save(profile);
+
+        String imagePath = "/images/randomImage.jpg";
+        mockMvc.perform(get(imagePath).header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void getImageFromPostUnauthenticated() throws Exception {
+        String jwt = obtainJwtTokenResponse("bbrumhead0", "s3cr3t");
+        ProfileDto createDto = profileManager.jwtToProfileDto("Bearer " + jwt);
+        Profile profile = ProfileMapper.INSTANCE.toEntity(createDto);
+        profileRepository.save(profile);
+
+        MvcResult response = mockMvc.perform(multipart("/api/v1/photos").file(prepareMultipartFile("OK.png")).param("description", "testDescription").header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt))
+                                    .andExpect(status().isCreated())
+                                    .andExpect(jsonPath("$.data.description").value("testDescription"))
+                                    .andExpect(jsonPath("$.data.authorId").value(profile.getProfileId()))
+                                    .andReturn();
+
+        String imagePath = JsonPath.read(response.getResponse().getContentAsString(), "$.data.image");
+        mockMvc.perform(get("/" + imagePath)).andExpect(status().isUnauthorized());
     }
 
 }
