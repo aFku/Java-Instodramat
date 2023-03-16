@@ -2,20 +2,20 @@ package com.rcbg.afku.instodramat.photos.controllers;
 
 import com.rcbg.afku.instodramat.authusers.dtos.ProfileDto;
 import com.rcbg.afku.instodramat.authusers.responses.PageProfileResponse;
+import com.rcbg.afku.instodramat.authusers.responses.ProfileResponseFactory;
 import com.rcbg.afku.instodramat.authusers.services.ProfileManager;
+import com.rcbg.afku.instodramat.common.responses.IResponseFactory;
 import com.rcbg.afku.instodramat.common.responses.MetaData;
 import com.rcbg.afku.instodramat.common.responses.PaginationData;
 import com.rcbg.afku.instodramat.photos.dtos.*;
-import com.rcbg.afku.instodramat.photos.responses.PageCommentsResponse;
-import com.rcbg.afku.instodramat.photos.responses.PagePhotosResponse;
-import com.rcbg.afku.instodramat.photos.responses.SingleCommentResponse;
-import com.rcbg.afku.instodramat.photos.responses.SinglePhotoResponse;
+import com.rcbg.afku.instodramat.photos.responses.*;
 import com.rcbg.afku.instodramat.photos.services.CommentManager;
 import com.rcbg.afku.instodramat.photos.services.PhotoManager;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -35,6 +35,12 @@ public class PhotoPostsController {
 
     private final CommentManager commentManager;
 
+    private final IResponseFactory photoResponseFactory = new PhotoResponseFactory();
+
+    private final IResponseFactory commentResponseFactory = new CommentResponseFactory();
+
+    private final IResponseFactory profileResponseFactory = new ProfileResponseFactory();
+
     @Autowired
     public PhotoPostsController(PhotoManager photoManager, ProfileManager profileManager, CommentManager commentManager) {
         this.photoManager = photoManager;
@@ -42,17 +48,12 @@ public class PhotoPostsController {
         this.commentManager = commentManager;
     }
 
-    @PostMapping(consumes = MediaType.ALL_VALUE) // Temporary All for developing
+    @PostMapping(consumes = MediaType.ALL_VALUE)
     public ResponseEntity<SinglePhotoResponse> addPostWithPhoto(HttpServletRequest request, @ModelAttribute PhotoRequestDto requestDto, Authentication authentication){
         String userId = authentication.getName();
         PhotoResponseDto responseDto = photoManager.createPhotoPost(requestDto, userId);
 
-        HttpHeaders headers = new HttpHeaders();
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.CREATED.value(), "object");
-        SinglePhotoResponse response = new SinglePhotoResponse();
-        response.setMetaData(metaData);
-        response.setData(responseDto);
-        return new ResponseEntity<>(response, headers, HttpStatus.CREATED);
+        return photoResponseFactory.createSingleResponse(request.getRequestURI(), HttpStatus.CREATED, responseDto, new Link[]{});
     }
 
     @PatchMapping(value = "/{photoId}", produces = { "application/hal+json" })
@@ -60,28 +61,23 @@ public class PhotoPostsController {
     public ResponseEntity<SinglePhotoResponse> updatePhoto(HttpServletRequest request, @ModelAttribute PhotoRequestDto requestDto, Authentication authentication, @PathVariable("photoId") int photoId){
         PhotoResponseDto responseDto = photoManager.updatePhoto(requestDto, photoId);
 
-        HttpHeaders headers = new HttpHeaders();
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "object");
-        SinglePhotoResponse response = new SinglePhotoResponse();
-        response.setMetaData(metaData);
-        response.setData(responseDto);
-        response.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).getPhoto(request, photoId, authentication)).withRel("photo").withType("GET"));
-        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+        Link[] hateoas = new Link[]{
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).getPhoto(request, photoId, authentication)).withRel("photo").withType("GET")
+        };
+        return photoResponseFactory.createSingleResponse(request.getRequestURI(), HttpStatus.OK, responseDto, hateoas);
     }
 
     @GetMapping(value = "/{photoId}", produces = { "application/hal+json" })
     public ResponseEntity<SinglePhotoResponse> getPhoto(HttpServletRequest request, @PathVariable("photoId") int photoId, Authentication authentication){
         PhotoResponseDto responseDto = photoManager.getPhotoPostByPhotoId(photoId);
-        HttpHeaders headers = new HttpHeaders();
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "object");
-        SinglePhotoResponse response = new SinglePhotoResponse();
-        response.setMetaData(metaData);
-        response.setData(responseDto);
+        Link[] hateoas = new Link[]{};
         if(responseDto.getAuthorId() == profileManager.getDomainObjectByUserId(authentication.getName()).getProfileId()){
-            response.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).updatePhoto(request, null, authentication, photoId)).withRel("update").withType("PATCH"));
-            response.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).deletePhoto(photoId)).withRel("delete").withType("DELETE"));
+            hateoas = new Link[]{
+                    WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).updatePhoto(request, null, authentication, photoId)).withRel("update").withType("PATCH"),
+                    WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).deletePhoto(photoId)).withRel("delete").withType("DELETE")
+            };
         }
-        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+        return photoResponseFactory.createSingleResponse(request.getRequestURI(), HttpStatus.OK, responseDto, hateoas);
     }
 
     @DeleteMapping(value = "/{photoId}")
@@ -100,79 +96,45 @@ public class PhotoPostsController {
     @GetMapping("/{photoId}/likes")
     public ResponseEntity<PageProfileResponse> getLikeList(HttpServletRequest request, @PathVariable("photoId") int photoId, Pageable pageable){
         Page<ProfileDto> data = photoManager.getLikesFromPhotoId(photoId, pageable);
-        PaginationData paginationData = new PaginationData(data);
-        HttpHeaders headers = new HttpHeaders();
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
-        PageProfileResponse response = new PageProfileResponse();
-        response.setMetaData(metaData);
-        response.setPagination(paginationData);
-        response.setData(data.getContent());
-        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+        return profileResponseFactory.createPaginationResponse(request.getRequestURI(), HttpStatus.OK, data, new Link[]{});
     }
 
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<PagePhotosResponse> getPhotosOfProfile(HttpServletRequest request, @PathVariable("profileId") int profileId, Pageable pageable) {
         Page<PhotoResponseDto> data = photoManager.getAllPhotoPostsByAuthorProfileId(profileId, pageable);
-        PaginationData paginationData = new PaginationData(data);
-        HttpHeaders headers = new HttpHeaders();
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
-        PagePhotosResponse response = new PagePhotosResponse();
-        response.setMetaData(metaData);
-        response.setPagination(paginationData);
-        response.setData(data.getContent());
-        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+        return photoResponseFactory.createPaginationResponse(request.getRequestURI(), HttpStatus.OK, data, new Link[]{});
     }
 
     @GetMapping
     public ResponseEntity<PagePhotosResponse> getAllPhotos(HttpServletRequest request, Pageable pageable) {
         Page<PhotoResponseDto> data = photoManager.getAllLatestPhotoPosts(pageable);
-        PaginationData paginationData = new PaginationData(data);
-        HttpHeaders headers = new HttpHeaders();
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
-        PagePhotosResponse response = new PagePhotosResponse();
-        response.setMetaData(metaData);
-        response.setPagination(paginationData);
-        response.setData(data.getContent());
-        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+        return photoResponseFactory.createPaginationResponse(request.getRequestURI(), HttpStatus.OK, data, new Link[]{});
     }
 
     @GetMapping("/profile/{profileId}/followers")
     public ResponseEntity<PagePhotosResponse> getPhotosOfFollowers(HttpServletRequest request, @PathVariable("profileId") int profileId, Pageable pageable) {
         Page<PhotoResponseDto> data = photoManager.getAllLatestPhotosFromFollowersByProfileId(profileId, pageable);
-        PaginationData paginationData = new PaginationData(data);
-        HttpHeaders headers = new HttpHeaders();
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
-        PagePhotosResponse response = new PagePhotosResponse();
-        response.setMetaData(metaData);
-        response.setPagination(paginationData);
-        response.setData(data.getContent());
-        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+        return photoResponseFactory.createPaginationResponse(request.getRequestURI(), HttpStatus.OK, data, new Link[]{});
     }
 
     @GetMapping("/{photoId}/comments")
     public ResponseEntity<PageCommentsResponse> getCommentsFromPhoto(HttpServletRequest request, @PathVariable("photoId") int photoId, Pageable pageable){
         Page<CommentResponseDto> data = commentManager.getCommentsFromPhoto(photoId, pageable);
-        PaginationData paginationData = new PaginationData(data);
-        HttpHeaders headers = new HttpHeaders();
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.OK.value(), "list");
-        PageCommentsResponse response = new PageCommentsResponse();
-        response.setData(data.getContent());
-        response.setMetaData(metaData);
-        response.setPagination(paginationData);
-        response.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).getPhoto(request, photoId, null)).withRel("photo").withType("GET"));
-        return new ResponseEntity<>(response, headers, HttpStatus.OK);
+
+        Link[] hateoas = new Link[]{
+            WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).getPhoto(request, photoId, null)).withRel("photo").withType("GET")
+        };
+        return commentResponseFactory.createPaginationResponse(request.getRequestURI(), HttpStatus.OK, data, hateoas);
     }
 
     @PostMapping("/{photoId}/comments")
     public ResponseEntity<SingleCommentResponse> createCommentForPhoto(HttpServletRequest request, @PathVariable("photoId") int photoId, @RequestBody CommentRequestDto requestDto, Authentication authentication){
         CommentResponseDto data = commentManager.createCommentForPhoto(requestDto, photoId, authentication.getName());
-        HttpHeaders headers = new HttpHeaders();
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.CREATED.value(), "object");
-        SingleCommentResponse response = new SingleCommentResponse();
-        response.setData(data);
-        response.setMetaData(metaData);
-        response.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).getPhoto(request, photoId, null)).withRel("photo").withType("GET"));
-        return new ResponseEntity<>(response, headers, HttpStatus.CREATED);
+
+        Link[] hateoas = new Link[]{
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PhotoPostsController.class).getPhoto(request, photoId, null)).withRel("photo").withType("GET")
+        };
+        return commentResponseFactory.createSingleResponse(request.getRequestURI(), HttpStatus.CREATED, data, hateoas);
     }
 
     @DeleteMapping("/{photoId}/comments/{commentId}")

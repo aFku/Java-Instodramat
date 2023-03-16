@@ -9,6 +9,7 @@ import com.rcbg.afku.instodramat.authusers.controllers.ProfileController;
 import com.rcbg.afku.instodramat.authusers.exceptions.UserNotRegisteredException;
 import com.rcbg.afku.instodramat.common.responses.ErrorResponse;
 import com.rcbg.afku.instodramat.common.responses.MetaData;
+import com.rcbg.afku.instodramat.common.responses.ResponseCreationUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -27,6 +29,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.util.Collections;
 
 @Component
 public class ExceptionPropagatorFilter extends OncePerRequestFilter {
@@ -54,11 +57,10 @@ public class ExceptionPropagatorFilter extends OncePerRequestFilter {
     }
 
     private HttpServletResponse prepareResponseUnregisteredUser(HttpServletResponse servletResponse, HttpServletRequest request, RuntimeException ex) throws IOException {
-        MetaData metaData = new MetaData(request.getRequestURI(), HttpStatus.UNAUTHORIZED.value(), "error");
-        ErrorResponse response = new ErrorResponse(metaData);
-        response.addMessage(ex.getMessage());
-        response.setMetaData(metaData);
-        response.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ProfileController.class).createProfile(request)).withRel("signup").withType("POST"));
+        Link[] hateoas = new Link[]{
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ProfileController.class).createProfile(request)).withRel("signup").withType("POST")
+        };
+        ErrorResponse response = ResponseCreationUtils.prepareErrorResponse(request.getRequestURI(), HttpStatus.UNAUTHORIZED, hateoas, Collections.singletonList(ex.getMessage()));
         String json = mapper.writeValueAsString(response);
 
         servletResponse.getWriter().write(json);
