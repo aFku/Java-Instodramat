@@ -1,7 +1,7 @@
 # Java-Instodramat
 
 ## Introduction
-This is my second Java spring boot project. It is port of my previous Django project "[Django-Instodramat]((https://github.com/aFku/Django-Instodramat))" reworked to be a REST API. The app is a clone of the popular social media service Instagram. You can create there a profile with your JWT token, upload images with description, follow other profiles, and like images.  There are many different endpoints, that provide features like showing the latest photos of persons that you follow or showing the list of persons that like a photo. There is also the endpoint that is used to return images instead of JSON responses.
+This is my second Java spring boot project. It is port of my previous Django project "[Django-Instodramat](https://github.com/aFku/Django-Instodramat)" reworked to be a REST API. The app is a clone of the popular social media service Instagram. You can create there a profile with your JWT token, upload images with description, follow other profiles, and like images.  There are many different endpoints, that provide features like showing the latest photos of persons that you follow or showing the list of persons that like a photo. There is also the endpoint that is used to return images instead of JSON responses.
 
 ## Stack
 - Java 17
