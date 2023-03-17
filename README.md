@@ -1,7 +1,7 @@
 # Java-Instodramat
 
 ## Introduction
-This is my second Java spring boot project. It is port of my previous Django project "Django-Instodramat" reworked to be a REST API. The app is a clone of the popular social media service Instagram. You can create there a profile with your JWT token, upload images with description, follow other profiles, and like images.  There are many different endpoints, that provide features like showing the latest photos of persons that you follow or showing the list of persons that like a photo. There is also the endpoint that is used to return images instead of JSON responses.
+This is my second Java spring boot project. It is port of my previous Django project "[Django-Instodramat]((https://github.com/aFku/Django-Instodramat))" reworked to be a REST API. The app is a clone of the popular social media service Instagram. You can create there a profile with your JWT token, upload images with description, follow other profiles, and like images.  There are many different endpoints, that provide features like showing the latest photos of persons that you follow or showing the list of persons that like a photo. There is also the endpoint that is used to return images instead of JSON responses.
 
 ## Stack
 - Java 17
@@ -19,7 +19,29 @@ This is my second Java spring boot project. It is port of my previous Django pro
 
 ## Deploy and testing
 
-// To do
+### How to deploy development setup
+
+You need to go into /Instodrama/deploy and execute command:
+
+<code>docker compose -f deps-compose.yaml up</code>
+
+This command will deploy MySQL database and Keycloak. Keycloak will be provisioned with realm-instodramat.json file which is used to configure whole realm.
+After deployment go to keycloak admin panel (by default):
+
+<code>http://localhost:8081/ </code>
+
+and login with creds admin:admin. Add user with password to Instodramat realm.
+Now you can go to /Instodramat directory and execute:
+
+<code>mvn spring-boot:run</code>
+
+After that you can obtain JWT from keycloak and use all available endpoints (create profile first).
+
+### How to run tests
+
+To run tests, just go to the /Instodramat directory and execute:
+
+<code>mvn test</code>
 
 ## Endpoints
 
