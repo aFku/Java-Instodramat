@@ -9,11 +9,15 @@ services:
     environment:
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=admin
+      - KEYCLOAK_IMPORT=/tmp/realm-instodramat.json
       - DB_VENDOR=mysql
       - DB_DATABASE=instodramat
       - DB_USER=user
       - DB_PASSWORD=password
       - DB_ADDR=db_dev
+      - JAVA_OPTS_APPEND=-Dkeycloak.profile.feature.upload_scripts=enabled
+    volumes:
+      - ./realm-instodramat.json:/tmp/realm-instodramat.json
     depends_on:
       db_dev:
         condition: service_healthy
